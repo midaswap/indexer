@@ -16,7 +16,7 @@ export const getNetworkName = () => {
       return "mainnet";
 
     case 5:
-      return config.environment === "prod" ? "prod-goerli" : "goerli";
+      return "goerli";
 
     case 10:
       return "optimism";
@@ -26,6 +26,9 @@ export const getNetworkName = () => {
 
     case 137:
       return "polygon";
+
+    case 324:
+      return "zksync";
 
     case 42161:
       return "arbitrum";
@@ -73,29 +76,46 @@ export const getNetworkName = () => {
 
 export const getOpenseaNetworkName = () => {
   switch (config.chainId) {
+    case 1:
+      return "ethereum";
     case 5:
       return "goerli";
-
-    case 10:
-      return "optimism";
-
-    case 56:
-      return "bsc";
-
     case 137:
       return "matic";
-
+    case 10:
+      return "optimism";
     case 42161:
       return "arbitrum";
-
+    case 42170:
+      return "arbitrum_nova";
+    case 56:
+      return "bsc";
+    case 43114:
+      return "avalanche";
+    case 11155111:
+      return "sepolia";
+    case 80001:
+      return "mumbai";
+    case 8453:
+      return "base";
+    case 84531:
+      return "base_goerli";
+    case 324:
+      return "zksync";
+    case 7777777:
+      return "zora";
+    case 999:
+      return "zora_testnet";
     default:
-      return "ethereum";
+      return null;
   }
 };
 
 export const getOpenseaSubDomain = () => {
   switch (config.chainId) {
     case 5:
+    case 80001:
+    case 11155111:
       return "testnets-api";
 
     default:
@@ -106,6 +126,8 @@ export const getOpenseaSubDomain = () => {
 export const getOpenseaBaseUrl = () => {
   switch (config.chainId) {
     case 5:
+    case 80001:
+    case 11155111:
       return "https://testnets-api.opensea.io";
     default:
       return "https://api.opensea.io";
@@ -130,6 +152,7 @@ type NetworkSettings = {
   washTradingExcludedContracts: string[];
   washTradingWhitelistedAddresses: string[];
   washTradingBlacklistedAddresses: string[];
+  trendingExcludedContracts: string[];
   customTokenAddresses: string[];
   nonSimulatableContracts: string[];
   mintsAsSalesBlacklist: string[];
@@ -152,6 +175,8 @@ type NetworkSettings = {
 
 type ElasticsearchIndexSettings = {
   numberOfShards?: number;
+  disableMappingsUpdate?: boolean;
+  configName?: string;
 };
 
 export const getNetworkSettings = (): NetworkSettings => {
@@ -168,6 +193,8 @@ export const getNetworkSettings = (): NetworkSettings => {
     washTradingExcludedContracts: [],
     washTradingWhitelistedAddresses: [],
     washTradingBlacklistedAddresses: [],
+
+    trendingExcludedContracts: [],
     customTokenAddresses: [],
     nonSimulatableContracts: [],
     multiCollectionContracts: [],
@@ -183,6 +210,13 @@ export const getNetworkSettings = (): NetworkSettings => {
     subDomain: "api",
     elasticsearch: {
       numberOfShards: 2,
+      indexes: {
+        activities: {
+          numberOfShards: 2,
+          disableMappingsUpdate: false,
+          configName: "CONFIG_DEFAULT",
+        },
+      },
     },
     isTestnet: false,
   };
@@ -256,6 +290,12 @@ export const getNetworkSettings = (): NetworkSettings => {
           // Nifty Gateway Omnibus
           "0xe052113bd7d7700d623414a0a4585bcae754e9d5",
         ],
+
+        trendingExcludedContracts: [
+          "0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85", // ens
+          "0xd4416b13d2b3a9abae7acd5d6c2bbdbe25686401", // ens
+          "0xc36442b4a4522e871399cd717abdd847ab11fe88", // uniswap positions
+        ],
         whitelistedCurrencies: new Map([
           [
             "0xceb726e6383468dd8ac0b513c8330cc9fb4024a8",
@@ -308,6 +348,15 @@ export const getNetworkSettings = (): NetworkSettings => {
               contract: "0x45f93404AE1E4f0411a7F42BC6a5Dc395792738D",
               name: "DEGEN",
               symbol: "DGEN",
+              decimals: 18,
+            },
+          ],
+          [
+            "0x313408eb31939a9c33b40afe28dc378845d0992f",
+            {
+              contract: "0x313408eb31939A9c33B40AFE28Dc378845D0992F",
+              name: "BPX",
+              symbol: "BPX",
               decimals: 18,
             },
           ],
@@ -434,6 +483,8 @@ export const getNetworkSettings = (): NetworkSettings => {
           indexes: {
             activities: {
               numberOfShards: 10,
+              disableMappingsUpdate: true,
+              configName: "CONFIG_1689873821",
             },
           },
         },
@@ -634,6 +685,39 @@ export const getNetworkSettings = (): NetworkSettings => {
         },
       };
     }
+    // ZKsync
+    case 324: {
+      return {
+        ...defaultNetworkSettings,
+        enableWebSocket: true,
+        realtimeSyncMaxBlockLag: 32,
+        realtimeSyncFrequencySeconds: 5,
+        lastBlockLatency: 5,
+        subDomain: "api-zksync",
+        onStartup: async () => {
+          // Insert the native currency
+          await Promise.all([
+            idb.none(
+              `
+                INSERT INTO currencies (
+                  contract,
+                  name,
+                  symbol,
+                  decimals,
+                  metadata
+                ) VALUES (
+                  '\\x0000000000000000000000000000000000000000',
+                  'Ether',
+                  'ETH',
+                  18,
+                  '{"coingeckoCurrencyId": "ethereum", "image": "https://assets.coingecko.com/coins/images/279/large/ethereum.png"}'
+                ) ON CONFLICT DO NOTHING
+              `
+            ),
+          ]);
+        },
+      };
+    }
     // Arbitrum
     case 42161: {
       return {
@@ -795,6 +879,11 @@ export const getNetworkSettings = (): NetworkSettings => {
         realtimeSyncMaxBlockLag: 32,
         realtimeSyncFrequencySeconds: 5,
         lastBlockLatency: 5,
+        supportedBidCurrencies: {
+          ...defaultNetworkSettings.supportedBidCurrencies,
+          // PaymentProcessor WETH
+          "0xfff9976782d46cc05630d1f6ebab18b2324d6b14": true,
+        },
         subDomain: "api-sepolia",
         onStartup: async () => {
           // Insert the native currency
@@ -985,6 +1074,13 @@ export const getNetworkSettings = (): NetworkSettings => {
         realtimeSyncFrequencySeconds: 5,
         lastBlockLatency: 5,
         subDomain: "api-zora",
+        elasticsearch: {
+          indexes: {
+            activities: {
+              configName: "CONFIG_1689873821",
+            },
+          },
+        },
         onStartup: async () => {
           // Insert the native currency
           await Promise.all([
@@ -1013,6 +1109,7 @@ export const getNetworkSettings = (): NetworkSettings => {
     case 43114: {
       return {
         ...defaultNetworkSettings,
+        metadataMintDelay: 300,
         enableWebSocket: false,
         realtimeSyncMaxBlockLag: 32,
         realtimeSyncFrequencySeconds: 5,

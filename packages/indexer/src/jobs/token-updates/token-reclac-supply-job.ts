@@ -39,7 +39,7 @@ export class TokenReclacSupplyJob extends AbstractRabbitMqJobHandler {
 
     await Tokens.update(contract, tokenId, {
       supply: totalSupply,
-      remainingSupply: totalRemainingSupply,
+      remainingSupply: Math.min(totalSupply, totalRemainingSupply),
     });
   }
 
@@ -122,6 +122,7 @@ export class TokenReclacSupplyJob extends AbstractRabbitMqJobHandler {
         WHERE address = $/contract/
         AND token_id = $/tokenId/
         AND nft_transfer_events.from IN ($/mintAddresses:list/)
+        AND is_deleted = 0
         ${continuation}
         ORDER BY "timestamp", tx_hash, log_index, batch_index
         LIMIT $/limit/
