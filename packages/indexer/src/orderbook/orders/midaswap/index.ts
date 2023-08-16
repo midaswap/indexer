@@ -56,6 +56,10 @@ type SaveResult = {
   triggerKind?: "new-order" | "reprice";
 };
 
+export const isOdd = (lpTokenId: string) => {
+  return Boolean(Number(lpTokenId) & 1);
+};
+
 export const getOrderId = (pool: string, lpTokenId: string, tokenId?: string) =>
   tokenId
     ? keccak256(
@@ -304,6 +308,11 @@ export const save = async (orderInfos: OrderInfo[]): Promise<SaveResult[]> => {
             });
           }
 
+          if (isOdd(lpTokenId.toString())) {
+            // Limit Order
+            return;
+          }
+
           // Handler buy orders
           const buyOrderId = getOrderId(pool.address, lpTokenId);
           const buyOrder = await redb.oneOrNone(
@@ -403,6 +412,11 @@ export const save = async (orderInfos: OrderInfo[]): Promise<SaveResult[]> => {
               },
             });
             await repriceOrder(buyOrderId, order);
+          }
+
+          if (isOdd(lpTokenId.toString())) {
+            // Limit Order
+            return;
           }
 
           // Handler sell orders
