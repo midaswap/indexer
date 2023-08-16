@@ -22,6 +22,11 @@
   },
   {
     "inputs": [],
+    "name": "Router__SlippageTooHigh",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "Router__WrongAmount",
     "type": "error"
   },
@@ -185,6 +190,11 @@
         "type": "uint256[]"
       },
       {
+        "internalType": "uint128",
+        "name": "_maxInput",
+        "type": "uint128"
+      },
+      {
         "internalType": "uint256",
         "name": "_deadline",
         "type": "uint256"
@@ -217,6 +227,11 @@
         "internalType": "uint256[]",
         "name": "_tokenIds",
         "type": "uint256[]"
+      },
+      {
+        "internalType": "uint128",
+        "name": "_maxInput",
+        "type": "uint128"
       },
       {
         "internalType": "uint256",
@@ -372,17 +387,12 @@
         "type": "uint24[]"
       },
       {
-        "internalType": "uint256[]",
-        "name": "_tokenIds",
-        "type": "uint256[]"
-      },
-      {
         "internalType": "uint256",
         "name": "_deadline",
         "type": "uint256"
       }
     ],
-    "name": "openLimitOrder",
+    "name": "openLimitBuyOrder",
     "outputs": [
       {
         "internalType": "uint256",
@@ -426,7 +436,85 @@
         "type": "uint256"
       }
     ],
-    "name": "openMultiLimitOrders",
+    "name": "openLimitSellOrder",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "idAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint128",
+        "name": "lpTokenId",
+        "type": "uint128"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_tokenX",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_tokenY",
+        "type": "address"
+      },
+      {
+        "internalType": "uint24[]",
+        "name": "_ids",
+        "type": "uint24[]"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_deadline",
+        "type": "uint256"
+      }
+    ],
+    "name": "openMultiLimitBuyOrder",
+    "outputs": [
+      {
+        "internalType": "uint128[]",
+        "name": "lpTokenIds",
+        "type": "uint128[]"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_tokenX",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_tokenY",
+        "type": "address"
+      },
+      {
+        "internalType": "uint24[]",
+        "name": "_ids",
+        "type": "uint24[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "_tokenIds",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_deadline",
+        "type": "uint256"
+      }
+    ],
+    "name": "openMultiLimitSellOrders",
     "outputs": [
       {
         "internalType": "uint128[]",
@@ -523,6 +611,11 @@
         "type": "uint256[]"
       },
       {
+        "internalType": "uint128",
+        "name": "_minOutput",
+        "type": "uint128"
+      },
+      {
         "internalType": "uint256",
         "name": "_deadline",
         "type": "uint256"
@@ -555,6 +648,11 @@
         "internalType": "uint256[]",
         "name": "_tokenIds",
         "type": "uint256[]"
+      },
+      {
+        "internalType": "uint128",
+        "name": "_minOutput",
+        "type": "uint128"
       },
       {
         "internalType": "uint256",
