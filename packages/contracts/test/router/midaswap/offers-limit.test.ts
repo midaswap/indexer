@@ -8,7 +8,7 @@ import { ethers } from "hardhat";
 import LPTokenAbi from "@reservoir0x/sdk/src/midaswap/abis/LPToken.json";
 
 import { ExecutionInfo } from "../helpers/router";
-import { MidaswapOffer, setupMidaswapOffers } from "../helpers/midaswap";
+import { MidaswapOffer, setupMidaswapOffers } from "../helpers/midaswap-limit";
 import { bn, getChainId, getRandomBoolean, getRandomInteger, reset, setupNFTs } from "../../utils";
 import RouterAbi from "@reservoir0x/sdk/src/midaswap/abis/Router.json";
 

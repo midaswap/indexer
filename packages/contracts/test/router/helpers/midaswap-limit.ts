@@ -166,11 +166,10 @@ export const setupMidaswapOffers = async (offers: MidaswapOffer[]) => {
         .connect(buyer)
         .createERC721Pair(nft.contract.address, Sdk.Common.Addresses.WNative[chainId]);
     }
-
     // Add liquidity
     const addTx = await router
       .connect(buyer)
-      .openMultiLimitBuyOrder(
+      .openMultiLimitBuyOrderETH(
         nft.contract.address,
         Sdk.Common.Addresses.WNative[chainId],
         [bin],

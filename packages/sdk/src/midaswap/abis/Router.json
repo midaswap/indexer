@@ -504,6 +504,40 @@
         "type": "uint24[]"
       },
       {
+        "internalType": "uint256",
+        "name": "_deadline",
+        "type": "uint256"
+      }
+    ],
+    "name": "openMultiLimitBuyOrderETH",
+    "outputs": [
+      {
+        "internalType": "uint128[]",
+        "name": "lpTokenIds",
+        "type": "uint128[]"
+      }
+    ],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_tokenX",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_tokenY",
+        "type": "address"
+      },
+      {
+        "internalType": "uint24[]",
+        "name": "_ids",
+        "type": "uint24[]"
+      },
+      {
         "internalType": "uint256[]",
         "name": "_tokenIds",
         "type": "uint256[]"

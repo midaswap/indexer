@@ -7,5 +7,5 @@ export const PairFactory: ChainIdToAddress = {
 
 export const Router: ChainIdToAddress = {
   // [Network.EthereumGoerli]: "0xc6a1a2738cfa91c5205bb57e21820b38b65c09a9",
-  [Network.EthereumGoerli]: "0x700b61933859503Dac783a65FF30463E208B2e4e",
+  [Network.EthereumGoerli]: "0xc2451A42BC5c27b56d0f20eB3157DAE0F0cC53A1",
 };
