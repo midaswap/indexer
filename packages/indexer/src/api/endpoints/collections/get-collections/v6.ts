@@ -64,6 +64,7 @@ export const getCollectionsV6Options: RouteOptions = {
         .description(
           "Array of contracts. Max amount is 20. Example: `0x8d04a8c79ceb0889bdd12acdf3fa9d207ed3ff63`"
         ),
+      creator: Joi.string().lowercase().pattern(regex.address).description("Filter by creator"),
       name: Joi.string()
         .lowercase()
         .description("Search for collections that match a string. Example: `bored`"),
@@ -214,7 +215,7 @@ export const getCollectionsV6Options: RouteOptions = {
             "7day": Joi.number().unsafe().allow(null),
             "30day": Joi.number().unsafe().allow(null),
           }).description(
-            "Total volume change X-days vs previous X-days. (e.g. 7day [days 1-7] vs 7day prior [days 8-14])"
+            "Total volume change X-days vs previous X-days. (e.g. 7day [days 1-7] vs 7day prior [days 8-14]). A value over 1 is a positive gain, under 1 is a negative loss. e.g. 1 means no change; 1.1 means 10% increase; 0.9 means 10% decrease."
           ),
           floorSale: Joi.object({
             "1day": Joi.number().unsafe().allow(null),
@@ -226,7 +227,7 @@ export const getCollectionsV6Options: RouteOptions = {
             "7day": Joi.number().unsafe().allow(null),
             "30day": Joi.number().unsafe().allow(null),
           }).description(
-            "Floor sale change from X-days vs X-days ago. (e.g. 7day floor sale vs floor sale 14 days ago)"
+            "Floor sale change from X-days vs X-days ago. (e.g. 7day floor sale vs floor sale 14 days ago). A value over 1 is a positive gain, under 1 is a negative loss. e.g. 1 means no change; 1.1 means 10% increase; 0.9 means 10% decrease."
           ),
           salesCount: Joi.object({
             "1day": Joi.number().unsafe().allow(null),
@@ -473,6 +474,10 @@ export const getCollectionsV6Options: RouteOptions = {
         }
         query.contract = query.contract.map((contract: string) => toBuffer(contract));
         conditions.push(`collections.contract IN ($/contract:csv/)`);
+      }
+      if (query.creator) {
+        query.creator = toBuffer(query.creator);
+        conditions.push(`collections.creator = $/creator/`);
       }
       if (query.name) {
         query.name = `%${query.name}%`;

@@ -6,8 +6,10 @@ import { parseEther } from "@ethersproject/units";
 import * as Sdk from "@reservoir0x/sdk";
 import crypto from "crypto";
 import Joi from "joi";
+
 import { bn, formatEth, formatPrice, formatUsd, fromBuffer, now, regex } from "@/common/utils";
 import { config } from "@/config/index";
+import { FeeRecipients } from "@/models/fee-recipients";
 import { Sources } from "@/models/sources";
 import { SourcesEntity } from "@/models/sources/sources-entity";
 import { OrderKind } from "@/orderbook/orders";
@@ -650,8 +652,8 @@ export const getJoiOrderObject = async (order: {
       currency,
       order.displayCurrency
     ),
-    validFrom: Number(order.validFrom),
-    validUntil: Number(order.validUntil),
+    validFrom: Math.floor(Number(order.validFrom)),
+    validUntil: Math.floor(Number(order.validUntil)),
     quantityFilled: Number(order.quantityFilled),
     quantityRemaining: Number(order.quantityRemaining),
     dynamicPricing: order.includeDynamicPricing
@@ -676,7 +678,7 @@ export const getJoiOrderObject = async (order: {
     },
     feeBps: Number(feeBps.toString()),
     feeBreakdown: feeBreakdown,
-    expiration: Number(order.expiration),
+    expiration: Math.floor(Number(order.expiration)),
     isReservoir: order.isReservoir,
     isDynamic:
       order.dynamic !== undefined ? Boolean(order.dynamic || order.kind === "sudoswap") : undefined,
@@ -731,6 +733,8 @@ export const JoiFeeBreakdown = Joi.object({
   kind: Joi.string(),
   bps: Joi.number(),
   recipient: Joi.string(),
+  source: Joi.string().optional(),
+  rawAmount: Joi.string(),
 });
 
 export const JoiSale = Joi.object({
@@ -784,27 +788,46 @@ export const getFeeValue = (feeValue: any, validFees: boolean) => {
   return feeValue !== null && validFees ? feeValue : undefined;
 };
 
-export const getFeeBreakdown = (
+export const getFeeBreakdown = async (
   royaltyFeeBreakdown: any,
   marketplaceFeeBreakdown: any,
-  validFees: boolean
+  validFees: boolean,
+  totalAmount: string
 ) => {
-  return (royaltyFeeBreakdown !== null || marketplaceFeeBreakdown !== null) && validFees
-    ? [].concat(
-        (royaltyFeeBreakdown ?? []).map((detail: any) => {
-          return {
-            kind: "royalty",
-            ...detail,
-          };
-        }),
-        (marketplaceFeeBreakdown ?? []).map((detail: any) => {
-          return {
-            kind: "marketplace",
-            ...detail,
-          };
-        })
-      )
-    : undefined;
+  const feeRecipients = await FeeRecipients.getInstance();
+  const feeBreakdown: undefined | any[] =
+    (royaltyFeeBreakdown !== null || marketplaceFeeBreakdown !== null) && validFees
+      ? [].concat(
+          (royaltyFeeBreakdown ?? []).map((detail: any) => {
+            return {
+              kind: "royalty",
+              ...detail,
+            };
+          }),
+          (marketplaceFeeBreakdown ?? []).map((detail: any) => {
+            return {
+              kind: "marketplace",
+              ...detail,
+            };
+          })
+        )
+      : undefined;
+
+  const sources = await Sources.getInstance();
+
+  if (feeBreakdown) {
+    for (let i = 0; i < feeBreakdown.length; i++) {
+      const feeBreak = feeBreakdown[i];
+
+      const feeEntity = feeRecipients.getByAddress(feeBreak.recipient, feeBreak.kind);
+      feeBreak.rawAmount = bn(totalAmount).mul(feeBreak.bps).div(bn(10000)).toString();
+
+      const orderSource = feeEntity?.sourceId ? sources.get(Number(feeEntity.sourceId)) : undefined;
+      feeBreak.source = orderSource?.domain ?? undefined;
+    }
+  }
+
+  return feeBreakdown;
 };
 
 export const getJoiSaleObject = async (sale: {
@@ -947,10 +970,11 @@ export const getJoiSaleObject = async (sale: {
     royaltyFeeBps: getFeeValue(sale.fees.royaltyFeeBps, lastSaleFeeInfoIsValid),
     marketplaceFeeBps: getFeeValue(sale.fees.marketplaceFeeBps, lastSaleFeeInfoIsValid),
     paidFullRoyalty: getFeeValue(sale.fees.paidFullRoyalty, lastSaleFeeInfoIsValid),
-    feeBreakdown: getFeeBreakdown(
+    feeBreakdown: await getFeeBreakdown(
       sale.fees.royaltyFeeBreakdown,
       sale.fees.marketplaceFeeBreakdown,
-      lastSaleFeeInfoIsValid
+      lastSaleFeeInfoIsValid,
+      sale.prices.gross.amount
     ),
     isDeleted: sale.isDeleted,
     createdAt: sale.createdAt,

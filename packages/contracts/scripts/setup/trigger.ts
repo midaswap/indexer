@@ -244,7 +244,7 @@ export const trigger = {
         : undefined,
     MidaswapModule: async (chainId: number) =>
       [1, 5].includes(chainId)
-        ? dv("MidaswapModule", "v1", [
+        ? dv("MidaswapModule", "v2", [
             DEPLOYER,
             Sdk.RouterV6.Addresses.Router[chainId],
             Sdk.Midaswap.Addresses.PairFactory[chainId],
@@ -263,7 +263,7 @@ export const trigger = {
         Sdk.SuperRare.Addresses.Bazaar[chainId],
       ]),
     SwapModule: async (chainId: number) =>
-      dv("SwapModule", "v1", [
+      dv("SwapModule", "v2", [
         DEPLOYER,
         Sdk.RouterV6.Addresses.Router[chainId],
         Sdk.Common.Addresses.WNative[chainId],
@@ -314,6 +314,7 @@ export const trigger = {
         Sdk.RouterV6.Addresses.Router[chainId],
         Sdk.PaymentProcessor.Addresses.Exchange[chainId],
       ]),
+    MintModule: async () => dv("MintModule", "v2", []),
   },
   // Utilities
   Utilities: {
@@ -331,16 +332,27 @@ export const trigger = {
           new Interface([
             "function createZone(string zoneName, string apiEndpoint, string documentationURI, address initialOwner, bytes32 salt)",
             "function getZone(bytes32 salt) view returns (address)",
+            "function getActiveSigners(address zone) view returns (address[])",
+            "function updateSigner(address zone, address signer, bool active)",
           ]),
           deployer
         );
 
         const salt = deployer.address.padEnd(66, "0");
-        const zoneAddress = await controller.getZone(salt);
+        const zoneAddress = await controller.getZone(salt).then((a: string) => a.toLowerCase());
         const code = await ethers.provider.getCode(zoneAddress);
         if (code === "0x") {
           await controller.createZone("CancellationOracle", "", "", deployer.address, salt);
-          console.log(`Deployed cancellation zone at ${zoneAddress.toLowerCase()}`);
+          console.log(`Deployed cancellation zone at address ${zoneAddress}`);
+        }
+
+        const oracleSigner = "0x32da57e736e05f75aa4fae2e9be60fd904492726";
+        const activeSigners = await controller
+          .getActiveSigners(zoneAddress)
+          .then((signers: string[]) => signers.map((s) => s.toLowerCase()));
+        if (!activeSigners.includes(oracleSigner)) {
+          await controller.updateSigner(zoneAddress, oracleSigner, true);
+          console.log(`Signer ${oracleSigner} configured`);
         }
       }
     },
