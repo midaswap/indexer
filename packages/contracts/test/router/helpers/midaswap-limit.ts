@@ -170,7 +170,7 @@ export const setupMidaswapOffers = async (offers: MidaswapOffer[]) => {
     // Add liquidity
     const addTx = await router
       .connect(buyer)
-      .addLiquidityETH(
+      .openMultiLimitBuyOrder(
         nft.contract.address,
         Sdk.Common.Addresses.WNative[chainId],
         [bin],
